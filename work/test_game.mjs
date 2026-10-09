@@ -98,6 +98,10 @@ async function main() {
   };
   const text = () => evaluate("document.body.innerText");
   const state = () => evaluate("window.__IR_TEST__.getState()");
+  const screenshot = async name => {
+    const shot = await cdp.send("Page.captureScreenshot", { format: "png", captureBeyondViewport: true });
+    writeFileSync(resolve(`work/tmp/${name}.png`), Buffer.from(shot.data, "base64"));
+  };
 
   await waitFor("document.readyState==='complete' && !!window.__IR_TEST__", "game bootstrap");
   assert((await text()).includes("現成法案"), "首頁顯示現成法案流程");
@@ -106,6 +110,41 @@ async function main() {
   await click("#startBtn");
   assert((await state()).factions.every(f => f.seats === 5), "開局四個政治網絡席次完全相同");
   const initial = await state();
+  const groups = await evaluate("__IR_TEST__.groups");
+  assert(JSON.stringify(groups) === JSON.stringify(["科技出口", "中小企業", "受薪階級", "房產屋主", "青年家庭", "農漁鄉鎮"]), "六個群體使用定稿名稱");
+  const groupConcerns = await evaluate("__IR_TEST__.groupConcerns");
+  assert(groupConcerns.length === 6 && groupConcerns.every(Boolean), "六個群體各有可見的核心關切");
+  assert((await text()).includes("地方工作、交通與災害韌性"), "支持表直接顯示農漁鄉鎮的核心關切");
+  const housingEffects = await evaluate("__IR_TEST__.laws.find(l=>l.id==='housing').effect.support");
+  assert(housingEffects.some(e=>e.group===3&&e.value===-1) && !housingEffects.some(e=>e.group===1&&e.value<0), "社會住宅的反彈由房產屋主承擔");
+  const typhoonImpact = await evaluate("(()=>{const s=__IR_TEST__.getState();__IR_TEST__.events.find(e=>e.name==='重大風災').apply(s);return{benefit:s.roundBenefits[5],burden:s.roundBurdens[5]}})()");
+  assert(typhoonImpact.benefit === 0 && typhoonImpact.burden === 1, "重大風災使農漁鄉鎮承擔負擔");
+  assert(initial.schemaVersion === 7, "等人口選舉使用新版存檔結構");
+  const groupElectorate = await evaluate("__IR_TEST__.groupElectorate");
+  assert(groupElectorate.every(value => value === 10), "六個群體各自代表十票");
+  const initialElection = await evaluate("__IR_TEST__.electionSnapshot()");
+  assert(initialElection.votes.every(vote => vote === 12), "四黨開局各有十二票");
+  assert(initialElection.electorateShares.every(share => Math.abs(share - 20) < 1e-9), "四黨開局各占全體選民 20%");
+  assert(initialElection.shares.every(share => Math.abs(share - 25) < 1e-9), "四黨開局有效票支持率完全相同");
+  assert(Math.abs(initialElection.turnout - 80) < 1e-9, "開局十二張未定票形成 80% 預估投票率");
+  await evaluate("(()=>{const s=__IR_TEST__.getState();s.round=2;s.phase=7;Math.random=()=>0;__IR_TEST__.setState(s)})()");
+  assert((await text()).includes("有效票最高者直接當選國家首長") && (await text()).includes("不需超過 50%"), "選舉畫面說明最高票直接當選且沒有過半門檻");
+  assert((await text()).includes("各 10 票") && (await text()).includes("未定"), "選舉畫面顯示等人口群體與未定票");
+  await screenshot("equal-population-election");
+  await click("#runElection");
+  const openingElection = await state();
+  assert(openingElection.headId === 0, "同票同聲望時以公開抽選決定國家首長");
+  assert(openingElection.factions.every(f => f.seats === 5), "完全同票時四黨各分配五席");
+  assert(openingElection.factions.reduce((sum, f) => sum + f.seats, 0) === 20, "等人口選舉固定分配二十席");
+  assert((await text()).includes("25.0%") && (await text()).includes("當選國家首長"), "開票結果顯示有效票與當選者");
+  await screenshot("equal-population-election-result");
+  await evaluate(`__IR_TEST__.setState(${JSON.stringify(initial)})`);
+  await evaluate("(()=>{const s=__IR_TEST__.getState();s.round=2;s.phase=7;s.lastElection=null;s.factions[2].support[3]=1;__IR_TEST__.setState(s)})()");
+  await click("#runElection");
+  const pluralityElection = await state();
+  assert(pluralityElection.headId === 2, "未過半時仍由有效票最高的綠色網絡直接當選");
+  assert(pluralityElection.lastElection.shares[2] < 50, "最高票直接當選不要求百分之五十");
+  await evaluate(`__IR_TEST__.setState(${JSON.stringify(initial)})`);
   assert(["production","capacity","trust","pressure"].every(k => !(k in initial)), "國家狀態已移除生產、行政、信任與分配壓力");
   assert(initial.factions.every(f => ["exposure","leadership","integrity"].every(k => !(k in f))), "政治網絡已移除曝光、國家領導與清廉");
   assert((await evaluate("document.querySelectorAll('#metrics .metric').length")) === 3, "頂部只保留國庫、債務與危機三項國家指標");
@@ -125,6 +164,11 @@ async function main() {
   assert((await state()).readyLaw.chairId === 0, "四方投票共同選出本輪院長");
   assert((await text()).includes("藍色網絡以 4 票當選"), "提案畫面顯示院長選舉結果");
   assert(!/(拼裝主要法案|強制總預算|利益 1|舉債取得)/.test(await text()), "提案畫面沒有舊拼裝欄位");
+  assert((await text()).includes("比較全部仍可提出的法案"), "提案前可展開比較全部固定法案");
+  await evaluate(`(()=>{const s=document.querySelector('[data-law-select="0"]');s.value='tax';s.dispatchEvent(new Event('change'))})()`);
+  assert((await text()).includes("政治受益") && (await text()).includes("若未通過"), "選擇法案時立即顯示政治收益與不通過代價");
+  assert((await text()).includes("回應需求：提高居住可負擔性"), "選案預覽直接標示可回應的當前社會需求");
+  await screenshot("proposal-info");
 
   const proposals = ["tax", "housing", "childcare", "defense"];
   for (let id = 0; id < proposals.length; id++) {
@@ -135,14 +179,19 @@ async function main() {
   await click("#toReadyOrdering");
   assert(await evaluate("document.querySelectorAll('.agenda-order-row').length") === 4, "院長排案保留全部四項提案");
   assert(await evaluate("document.querySelectorAll('[data-up],[data-down]').length") === 8, "院長只有排序控制，沒有刪案控制");
+  assert((await text()).includes("財政推演"), "排案畫面依目前順序推演每案國庫是否可行");
+  await screenshot("agenda-finance");
 
   await evaluate("(()=>{const s=__IR_TEST__.getState();s.treasury=2;__IR_TEST__.setState(s)})()");
   await click("#lockReadyAgenda");
-  assert((await text()).includes("類型："), "固定法案牌只用簡單類型連結需求與國家挑戰");
+  assert((await text()).includes("國家現在") && (await text()).includes("政治受益"), "表決前顯示國家效果與提案者政治收益");
+  assert((await text()).includes("還差 11 席才能通過") && (await text()).includes("尚未表態 20"), "表決畫面先顯示公開票勢與距離門檻席次");
   assert(await evaluate("Object.values(__IR_TEST__.laws[0]).sort().length") === 5, "法案資料除內部識別碼外只含名稱、花費、效果與類型");
-  const setAllVotes = async value => evaluate(`document.querySelectorAll('[data-vote]').forEach(e=>e.value=${JSON.stringify(value)})`);
+  await screenshot("vote-stakes");
+  const setAllVotes = async value => evaluate(`document.querySelectorAll('[data-vote]').forEach(e=>{e.value=${JSON.stringify(value)};e.dispatchEvent(new Event('change'))})`);
 
   await setAllVotes("yes");
+  assert((await text()).includes("已達通過門檻"), "公開表態時即時更新是否達到通過門檻");
   await click("#resolveReadyVote");
   assert((await state()).treasury === 5, "先通過增稅法後國庫由 2 增至 5");
   assert((await state()).demands[0].progress === 1, "通過相符法案才推進社會需求");

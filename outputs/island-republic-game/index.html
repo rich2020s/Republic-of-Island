@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>島嶼共和 v0.8｜精簡治理版</title>
+  <title>島嶼共和 v0.12｜群體識別版</title>
   <style>
     :root {
       --bg: #f3f1ea;
@@ -118,8 +118,18 @@
     .group-table { width: 100%; border-collapse: collapse; font-size: 13px; }
     .group-table th, .group-table td { padding: 7px 5px; border-bottom: 1px solid var(--line); text-align: center; }
     .group-table th:first-child, .group-table td:first-child { text-align: left; }
+    .group-concern { display:block; margin-top:2px; color:var(--muted); font-size:10px; line-height:1.25; font-weight:400; }
     .support-bar { height: 7px; background: #e4e1da; border-radius: 99px; overflow: hidden; }
     .support-bar span { display: block; height: 100%; background: var(--faction); }
+    .undecided { color:var(--muted); }
+    .election-summary { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin:14px 0; }
+    .election-party { border-top:5px solid var(--faction); }
+    .election-party .vote-share { font-size:28px; font-weight:900; font-variant-numeric:tabular-nums; }
+    .election-party small { display:block; color:var(--muted); }
+    .election-party.leading { box-shadow:0 0 0 2px rgba(196,154,72,.55); }
+    .election-groups { width:100%; border-collapse:collapse; font-size:13px; margin-top:12px; }
+    .election-groups th,.election-groups td { padding:8px 6px; border-bottom:1px solid var(--line); text-align:center; }
+    .election-groups th:first-child,.election-groups td:first-child { text-align:left; }
     .log { max-height: 270px; overflow: auto; padding-right: 4px; }
     .log-item { padding: 7px 0; border-bottom: 1px dashed var(--line); font-size: 12px; }
     .log-item b { color: var(--navy); }
@@ -162,6 +172,32 @@
     .ready-bill-top { display:flex; justify-content:space-between; gap:.6rem; }
     .ready-tag,.ready-cost { font-size:.78rem; font-weight:800; padding:.22rem .5rem; border-radius:99px; background:#e8dcc3; }
     .ready-effects { border-top:1px solid rgba(70,50,20,.14); padding-top:.45rem; margin-top:.45rem; }
+    .law-catalog summary { cursor:pointer; font-weight:900; color:var(--navy); }
+    .law-catalog-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.7rem; margin-top:.8rem; }
+    .law-preview { margin-top:.7rem; }
+    .law-preview:empty { display:none; }
+    .ready-bill-card.compact { margin:.45rem 0 0; box-shadow:none; }
+    .ready-bill-card.compact h3 { font-size:1.05rem; }
+    .ready-bill-card.compact .bill-stakes { grid-template-columns:1fr; }
+    .bill-stakes { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.6rem; margin-top:.75rem; }
+    .stake-box { padding:.7rem; border:1px solid rgba(70,50,20,.14); border-radius:10px; background:rgba(255,255,255,.66); }
+    .stake-box b { display:block; color:var(--navy); margin-bottom:.2rem; }
+    .stake-box small { display:block; color:var(--muted); line-height:1.45; }
+    .stake-box.risk { background:#fff5e9; border-color:#e2b77e; }
+    .relevance-line { display:flex; flex-wrap:wrap; gap:.35rem; margin-top:.65rem; }
+    .relevance-tag { display:inline-flex; align-items:center; padding:.2rem .5rem; border-radius:99px; background:#e8f0e8; color:#27613b; font-size:.75rem; font-weight:800; }
+    .relevance-tag.challenge { background:#e8edf3; color:#274e69; }
+    .relevance-tag.none { background:#eeeae2; color:#6b6256; }
+    .agenda-finance { margin-top:.35rem; font-size:.78rem; font-weight:800; color:var(--good); }
+    .agenda-finance.bad { color:var(--bad); }
+    .vote-outlook { margin:.75rem 0; padding:.8rem; border:1px solid var(--line); border-radius:12px; background:#f7f5ef; }
+    .vote-outlook-head { display:flex; justify-content:space-between; gap:.8rem; font-weight:900; }
+    .vote-track { display:flex; height:9px; margin:.55rem 0; border-radius:99px; overflow:hidden; background:#ddd9d0; }
+    .vote-track .yes { background:var(--good); }
+    .vote-track .no { background:var(--bad); }
+    .vote-track .abstain { background:#9a9284; }
+    .vote-status { color:var(--navy); font-size:.9rem; font-weight:800; }
+    .vote-interest { color:var(--muted); font-size:.78rem; font-weight:400; line-height:1.35; }
     .fiscal-failure,.law-result.failed { border-left:6px solid var(--bad); }
     .law-result.passed { border-left:6px solid var(--good); }
     .challenge-list { display:grid; gap:10px; }
@@ -184,7 +220,7 @@
       .masthead { align-items: flex-start; flex-direction: column; }
       .mast-actions { justify-content: flex-start; }
       .metrics { grid-template-columns: repeat(2,1fr); }
-      .grid-2, .grid-3, .form-row, .sidebar, .welcome .features, .ready-submit-grid { grid-template-columns: 1fr; }
+      .grid-2, .grid-3, .form-row, .sidebar, .welcome .features, .ready-submit-grid, .law-catalog-grid, .bill-stakes, .election-summary { grid-template-columns: 1fr; }
       .vote-row { grid-template-columns: 1fr; }
       .topline { grid-template-columns: 1fr; }
       .progress { justify-content: flex-start; }
@@ -199,7 +235,7 @@
     <header class="masthead">
       <div>
         <h1>島嶼共和</h1>
-        <p>政治協商與民主治理遊戲原型 v0.8</p>
+        <p>政治協商與民主治理遊戲原型 v0.12</p>
       </div>
       <div class="mast-actions">
         <button class="btn ghost" id="rulesBtn">規則摘要</button>
@@ -217,7 +253,7 @@
     </div>
   </div>
 
-  <div style="position:fixed;right:12px;bottom:12px;z-index:999;background:#24303b;color:#fff;padding:7px 11px;border-radius:999px;font:700 12px/1.2 system-ui;box-shadow:0 4px 14px #0004">v0.8 精簡治理版</div>
+  <div style="position:fixed;right:12px;bottom:12px;z-index:999;background:#24303b;color:#fff;padding:7px 11px;border-radius:999px;font:700 12px/1.2 system-ui;box-shadow:0 4px 14px #0004">v0.12 群體識別版</div>
 
   <dialog id="rulesDialog">
     <div class="modal">
@@ -227,11 +263,11 @@
         <li>每回合揭露事件，形成社會輿論與限期需求。</li>
         <li>奇數回合揭露一項迫近國家挑戰；未處理時會依序進入爆發與國難。</li>
         <li>收入結算後，四個政治網絡各投一票，共同選出本輪院長。</li>
-        <li>院長選出後，所有玩家各提出一張固定內容法案或放棄。</li>
+        <li>院長選出後，所有玩家先比較固定法案的完整利害，再各提出一張或放棄。</li>
         <li>所有人完成提案後，由院長排列全部合法法案的表決順序。</li>
-        <li>逐案表決；通過前不生效，通過後立即依牌面生效。</li>
+        <li>逐案公開表態；畫面即時顯示票勢、還差席次與不通過的代價。</li>
         <li>一般支出案輪到時若國庫不足，直接判定「財政不成立」。</li>
-        <li>民意結算後，偶數回合舉行選舉，回合檢查時結算國家挑戰。</li>
+        <li>民意結算後，偶數回合依六個等人口群體的十格支持票池舉行選舉；每格支持就是一票，有效票最高者直接當選國家首長。</li>
       </ol>
       <p><b>共同失敗：</b>債務達到 10，或危機累積到 3。</p>
       <p><b>個人勝利：</b>完成第 6 回合後，以席次、聲望與資金計算總分。</p>
@@ -241,7 +277,12 @@
 
   <script>
   (() => {
-    const GROUPS = ["科技出口", "中小企業", "受薪階級", "房產屋主", "青年家庭", "地方網絡"];
+    const GROUPS = ["科技出口", "中小企業", "受薪階級", "房產屋主", "青年家庭", "農漁鄉鎮"];
+    const GROUP_CONCERNS = ["訂單、能源與供應鏈", "營運成本與資金周轉", "工資、就業與年金", "房價、稅負與資產安全", "居住、托育與世代負擔", "地方工作、交通與災害韌性"];
+    // 六個群體各代表 10 票；支持格數可直接相加為全國票數。
+    const GROUP_ELECTORATE = [10, 10, 10, 10, 10, 10];
+    const GROUP_VOTE_POOL = 10;
+    const TOTAL_SEATS = 20;
     const PHASES = ["事件", "收入", "院長選舉與提案", "院長排案", "逐案表決", "法案生效", "民意", "選舉", "檢查"];
     const COLORS = ["#2f6f91", "#a4672b", "#447a58", "#76518e"];
     const FACTION_TEMPLATES = [
@@ -254,10 +295,10 @@
       { name:"出口景氣下滑", text:"本回合收入減少 1，科技出口支持最低的派系面臨壓力。", apply:s=>{s.temp.revenueMod=-1; s.roundBurdens[0]++;} },
       { name:"國際需求擴張", text:"本回合收入增加 2。", apply:s=>{s.temp.revenueMod=2;} },
       { name:"能源價格衝擊", text:"國庫減少 1，受薪階級與中小企業各承擔一枚負擔。", apply:s=>{s.treasury=Math.max(0,s.treasury-1); s.roundBurdens[1]++;s.roundBurdens[2]++;} },
-      { name:"重大風災", text:"國庫支付 2；不足部分轉為危機。地方網絡得到一枚利益。", apply:s=>{if(s.treasury>=2)s.treasury-=2;else{s.treasury=0;s.crises++;}s.roundBenefits[5]++;} },
+      { name:"重大風災", text:"國庫支付 2；不足部分轉為危機。農漁鄉鎮承擔一枚負擔。", apply:s=>{if(s.treasury>=2)s.treasury-=2;else{s.treasury=0;s.crises++;}s.roundBurdens[5]++;} },
       { name:"房價快速上升", text:"房產屋主得到一枚利益，青年家庭承擔兩枚負擔。", apply:s=>{s.roundBenefits[3]++;s.roundBurdens[4]+=2;} },
       { name:"公民監督浪潮", text:"政治網絡為公開帳目與回應質疑，各支付 1 點資金。", apply:s=>{s.factions.forEach(f=>f.funds=Math.max(0,f.funds-1));} },
-      { name:"地方產業轉型", text:"中小企業與地方網絡各得到一枚利益。", apply:s=>{s.roundBenefits[1]++;s.roundBenefits[5]++;} },
+      { name:"地方產業轉型", text:"中小企業與農漁鄉鎮各得到一枚利益。", apply:s=>{s.roundBenefits[1]++;s.roundBenefits[5]++;} },
       { name:"人口老化加速", text:"國庫減少 1，受薪階級與青年家庭各承擔一枚負擔。", apply:s=>{s.treasury=Math.max(0,s.treasury-1);s.roundBurdens[2]++;s.roundBurdens[4]++;} },
       { name:"行政改革成果", text:"改革受到肯定，議會領先網絡取得 1 點聲望。", apply:s=>{leader(s).prestige++;} },
       { name:"外部安全壓力", text:"若本回合國防安全預算低於 1，回合結束時增加一枚危機。", apply:s=>{s.temp.securityRequired=true;} },
@@ -266,7 +307,7 @@
     ];
 
     const READY_BILLS = [
-      {id:"housing",name:"社會住宅擴建條例",cost:4,type:"居住",effect:{support:[{group:4,value:2},{group:5,value:1},{group:1,value:-1}],prestige:1}},
+      {id:"housing",name:"社會住宅擴建條例",cost:4,type:"居住",effect:{support:[{group:4,value:2},{group:5,value:1},{group:3,value:-1}],prestige:1}},
       {id:"tax",name:"囤房與資本利得稅改革",cost:0,type:"經濟",effect:{treasury:3,support:[{group:4,value:1},{group:3,value:-2}],prestige:1}},
       {id:"childcare",name:"育兒與托育服務擴充法",cost:4,type:"照顧",effect:{support:[{group:2,value:1},{group:4,value:2}],prestige:1}},
       {id:"pension",name:"年金財務改革法",cost:2,type:"照顧",effect:{debt:-1,support:[{group:4,value:1},{group:2,value:-1},{group:3,value:-1}],prestige:2}},
@@ -282,13 +323,13 @@
       "出口景氣下滑":{opinion:"出口訂單減少，勞工與中小企業要求政府先保住工作。",title:"穩定就業與出口訂單",group:2,policies:["industry","labor","energy"],required:1,due:0,penalty:{treasury:-1},reward:{prestige:1}},
       "國際需求擴張":{opinion:"社會要求把景氣紅利轉成投資、薪資與長期產能。",title:"把景氣紅利轉為公共投資",group:0,policies:["industry","digital","energy"],required:1,due:0,penalty:{treasury:-2},reward:{treasury:1,prestige:1}},
       "能源價格衝擊":{opinion:"家庭擔心生活費上升，企業則警告成本轉嫁。",title:"穩定民生與企業能源成本",group:1,policies:["energy","labor","industry"],required:1,due:0,penalty:{treasury:-1},reward:{prestige:1}},
-      "重大風災":{opinion:"災區居民要求立即重建、恢復交通與公共服務。",title:"災後重建與地方韌性",group:5,policies:["local","digital","childcare"],required:2,due:0,penalty:{crises:1},reward:{treasury:1,prestige:1}},
+      "重大風災":{opinion:"受災的農漁鄉鎮要求立即重建、恢復交通與公共服務。",title:"災後重建與地方韌性",group:5,policies:["local","digital","childcare"],required:2,due:0,penalty:{crises:1},reward:{treasury:1,prestige:1}},
       "房價快速上升":{opinion:"青年與租屋家庭認為成長成果沒有落到自己身上。",title:"提高居住可負擔性",group:4,policies:["housing","tax"],required:2,due:0,penalty:{crises:1},reward:{prestige:2}},
       "公民監督浪潮":{opinion:"媒體與公民團體要求公開決策交換與利益關係。",title:"透明治理與反利益輸送",group:4,policies:["digital","tax"],required:1,due:0,penalty:{funds:-1},reward:{prestige:1}},
-      "地方產業轉型":{opinion:"地方選民要求工作、交通與投資真正進入非都會地區。",title:"地方就業與產業轉型",group:5,policies:["local","industry"],required:2,due:1,penalty:{treasury:-1},reward:{treasury:1,prestige:1}},
+      "地方產業轉型":{opinion:"農漁鄉鎮要求工作、交通與投資真正進入非都會地區。",title:"地方就業與產業轉型",group:5,policies:["local","industry"],required:2,due:1,penalty:{treasury:-1},reward:{treasury:1,prestige:1}},
       "人口老化加速":{opinion:"家庭同時承受照顧與年金焦慮。",title:"年金與照顧改革",group:2,policies:["pension","childcare"],required:2,due:1,penalty:{debt:1},reward:{prestige:2}},
       "行政改革成果":{opinion:"社會要求把一次性的效率提升變成可監督制度。",title:"制度化行政改革",group:4,policies:["digital"],required:1,due:1,penalty:{treasury:-1},reward:{prestige:1}},
-      "外部安全壓力":{opinion:"民眾要求政府證明社會能在危機下維持運作。",title:"建立防衛與社會韌性",group:5,policies:["defense"],required:1,due:0,penalty:{crises:1},reward:{prestige:1}},
+      "外部安全壓力":{opinion:"沿海與非都會社區要求交通、電網、救災與民防在危機下維持運作。",title:"建立防衛與社會韌性",group:5,policies:["defense"],required:1,due:0,penalty:{crises:1},reward:{prestige:1}},
       "金融市場震盪":{opinion:"存戶與中小企業反對把風險全部轉嫁給下一代。",title:"穩定金融與中小企業信心",group:1,policies:["tax","industry"],required:1,due:0,penalty:{debt:1},reward:{treasury:1,prestige:1}},
       "公共服務獲肯定":{opinion:"民眾要求把有效服務擴大到仍未被照顧的人。",title:"擴大可及的公共服務",group:2,policies:["childcare","digital"],required:1,due:1,penalty:{crises:1},reward:{prestige:1}}
     };
@@ -317,7 +358,7 @@
 
     function newGame(){
       state = {
-        schemaVersion:5, started:false, round:1, phase:0, treasury:10, debt:2, crises:0,
+        schemaVersion:7, started:false, round:1, phase:0, treasury:10, debt:2, crises:0, headId:null, lastElection:null,
         factions:FACTION_TEMPLATES.map((f,i)=>({...f,id:i,ai:false,influence:5,funds:5,prestige:0,seats:5,support:[...f.support]})),
         roundBenefits:Array(6).fill(0), roundBurdens:Array(6).fill(0), temp:{revenueMod:0,patronage:0}, event:null,
         budget:null, bill:null, lastResult:null, demands:[], demandCounter:0, challenges:[], challengeCounter:0, drawnChallengeIds:[], scars:[], challengeReviewRound:null, proposals:[], readyLaw:null, roundBills:[], log:[]
@@ -325,21 +366,56 @@
       render();
     }
 
-    function allocateSeats(){
-      state.factions.forEach(f=>f.seats=1);
-      GROUPS.forEach((_,g)=>{
-        const ranked=[...state.factions].sort((a,b)=>b.support[g]-a.support[g] || b.prestige-a.prestige || a.id-b.id);
-        ranked[0].seats+=2; ranked[1].seats+=1;
-      });
+    function groupSupportTotal(group){
+      return state.factions.reduce((sum,f)=>sum+f.support[group],0);
+    }
+    function groupUndecided(group){
+      return Math.max(0,GROUP_VOTE_POOL-groupSupportTotal(group));
+    }
+    function electionSnapshot(){
+      const electorate=GROUP_ELECTORATE.reduce((sum,n)=>sum+n,0);
+      const votes=state.factions.map(f=>GROUPS.reduce((sum,_,group)=>sum+GROUP_ELECTORATE[group]*f.support[group]/GROUP_VOTE_POOL,0));
+      const validVotes=votes.reduce((sum,n)=>sum+n,0);
+      const shares=votes.map(v=>validVotes?v/validVotes*100:0);
+      const electorateShares=votes.map(v=>electorate?v/electorate*100:0);
+      const topVote=Math.max(...votes),topIds=state.factions.filter(f=>Math.abs(votes[f.id]-topVote)<1e-9).map(f=>f.id);
+      return{votes,validVotes,electorate,electorateShares,turnout:electorate?validVotes/electorate*100:0,shares,topIds};
+    }
+    function allocateSeats(snapshot){
+      const exact=snapshot.shares.map(share=>share/100*TOTAL_SEATS);
+      const seats=exact.map(Math.floor);
+      let remaining=TOTAL_SEATS-seats.reduce((sum,n)=>sum+n,0);
+      const order=state.factions.map(f=>f.id).sort((a,b)=>(exact[b]-seats[b])-(exact[a]-seats[a])||snapshot.votes[b]-snapshot.votes[a]||state.factions[b].prestige-state.factions[a].prestige||a-b);
+      for(let i=0;i<remaining;i++)seats[order[i%order.length]]++;
+      state.factions.forEach(f=>f.seats=seats[f.id]);
+      return seats;
+    }
+    function chooseElectionWinner(snapshot){
+      const bestPrestige=Math.max(...snapshot.topIds.map(id=>state.factions[id].prestige));
+      const finalists=snapshot.topIds.filter(id=>state.factions[id].prestige===bestPrestige);
+      return finalists[Math.floor(Math.random()*finalists.length)];
+    }
+    function applySupportChange(factionId,group,delta){
+      const faction=state.factions[factionId],before=faction.support[group];
+      if(delta<0){faction.support[group]=Math.max(0,before+delta);return faction.support[group]-before;}
+      let remaining=Math.min(delta,5-before),open=groupUndecided(group),fromUndecided=Math.min(remaining,open);
+      faction.support[group]+=fromUndecided;remaining-=fromUndecided;
+      while(remaining>0){
+        const donor=state.factions.filter(f=>f.id!==factionId&&f.support[group]>0).sort((a,b)=>b.support[group]-a.support[group]||a.id-b.id)[0];
+        if(!donor)break;
+        donor.support[group]--;faction.support[group]++;remaining--;
+      }
+      return faction.support[group]-before;
     }
 
     function normalize(){
       state.treasury=clamp(state.treasury,0,20); state.debt=clamp(state.debt);
       state.crises=clamp(state.crises,0,3); state.factions.forEach(f=>{f.support=f.support.map(v=>clamp(v,0,5));f.influence=Math.max(0,f.influence);f.funds=Math.max(0,f.funds);});
+      GROUPS.forEach((_,group)=>{let overflow=groupSupportTotal(group)-GROUP_VOTE_POOL;while(overflow>0){const faction=[...state.factions].sort((a,b)=>b.support[group]-a.support[group]||b.id-a.id)[0];if(!faction||faction.support[group]<=0)break;faction.support[group]--;overflow--;}});
     }
 
     function save(){ localStorage.setItem("islandRepublicState",JSON.stringify(state)); toast("已儲存目前進度"); }
-    function load(){ const raw=localStorage.getItem("islandRepublicState"); if(!raw)return toast("找不到已儲存的進度"); try{const parsed=JSON.parse(raw);if(parsed.schemaVersion!==5)throw new Error("legacy-save");state=parsed;render();toast("已讀取進度");}catch{toast("舊版或損壞的存檔無法載入；請重新開始新遊戲");} }
+    function load(){ const raw=localStorage.getItem("islandRepublicState"); if(!raw)return toast("找不到已儲存的進度"); try{const parsed=JSON.parse(raw);if(parsed.schemaVersion===6){parsed.schemaVersion=7;parsed.lastElection=null;}else if(parsed.schemaVersion!==7)throw new Error("legacy-save");state=parsed;render();toast("已讀取進度");}catch{toast("舊版或損壞的存檔無法載入；請重新開始新遊戲");} }
     function toast(msg){ log("系統",msg); renderSidebar(); }
 
     function render(){ normalize(); renderHeader(); renderMetrics(); renderSidebar(); renderMain(); }
@@ -354,12 +430,12 @@
     }
     function renderSidebar(){
       if(!state.started){sidebar.innerHTML="";return;}
-      const lead=leader(state).id;
+      const lead=state.headId??leader(state).id;
       sidebar.innerHTML=`
-        <section class="panel"><h3 style="margin-top:0">政治網絡</h3><div class="faction-list">${state.factions.map(f=>`<div class="faction-card ${f.id===lead?'leader':''}" style="--faction:${f.color}"><div class="name">${f.name}</div><div class="stats"><span>席次 ${f.seats}</span><span>聲望 ${f.prestige}</span><span>影響 ${f.influence}</span><span>資金 ${f.funds}</span></div></div>`).join("")}</div></section>
+        <section class="panel"><h3 style="margin-top:0">政治網絡</h3><div class="faction-list">${state.factions.map(f=>`<div class="faction-card ${f.id===lead?'leader':''}" style="--faction:${f.color}"><div class="name">${f.name}${f.id===state.headId?'　<span class="tag">國家首長</span>':''}</div><div class="stats"><span>席次 ${f.seats}</span><span>聲望 ${f.prestige}</span><span>影響 ${f.influence}</span><span>資金 ${f.funds}</span></div></div>`).join("")}</div></section>
         ${renderDemandSidebar()}
         ${renderChallengeSidebar()}
-        <section class="panel"><h3 style="margin-top:0">集團支持</h3><table class="group-table"><thead><tr><th>集團</th>${state.factions.map(f=>`<th style="color:${f.color}">${f.short}</th>`).join("")}</tr></thead><tbody>${GROUPS.map((g,gi)=>`<tr><td>${g}</td>${state.factions.map(f=>`<td><b>${f.support[gi]}</b><div class="support-bar"><span style="--faction:${f.color};width:${f.support[gi]*20}%"></span></div></td>`).join("")}</tr>`).join("")}</tbody></table></section>
+        <section class="panel"><h3 style="margin-top:0">集團支持</h3><table class="group-table"><thead><tr><th>集團</th>${state.factions.map(f=>`<th style="color:${f.color}">${f.short}</th>`).join("")}<th class="undecided">未定</th></tr></thead><tbody>${GROUPS.map((g,gi)=>`<tr><td><strong>${g}</strong><small class="group-concern">${GROUP_CONCERNS[gi]}</small></td>${state.factions.map(f=>`<td><b>${f.support[gi]}</b><div class="support-bar"><span style="--faction:${f.color};width:${f.support[gi]*10}%"></span></div></td>`).join("")}<td class="undecided"><b>${groupUndecided(gi)}</b></td></tr>`).join("")}</tbody></table><p class="lede" style="font-size:11px;margin:9px 0 0">每個群體各有 10 票；把六列同色數字相加，就是該黨目前票數。</p></section>
         <section class="panel"><h3 style="margin-top:0">政治紀錄</h3><div class="log">${state.log.length?state.log.map(x=>`<div class="log-item"><b>R${x.round} ${x.title}</b><br>${x.text}</div>`).join(""):'<div class="log-item">尚無紀錄</div>'}</div></section>`;
     }
 
@@ -382,11 +458,20 @@
 
     function renderElection(){
       if(state.round%2!==0){main.innerHTML=`<section class="panel"><h2>本回合沒有選舉</h2><p>選舉在第 2、第 4 與第 6 回合舉行。</p><button class="btn primary" id="skipElection">進入回合檢查</button></section>`;$("#skipElection").onclick=nextPhase;return;}
-      main.innerHTML=`<section class="panel"><h2>全國選舉</h2><p class="lede">每個社會集團提供 3 席：支持最高者取得 2 席，第二名取得 1 席。每個派系另保留 1 基本席。</p><div class="grid-2">${GROUPS.map((g,gi)=>{const ranked=[...state.factions].sort((a,b)=>b.support[gi]-a.support[gi]||b.prestige-a.prestige);return`<div class="choice"><strong>${g}</strong><small>第一 ${ranked[0].name}　第二 ${ranked[1].name}</small></div>`}).join("")}</div><div class="actions"><button class="btn gold" id="runElection">重新分配席次</button></div></section>`;
-      $("#runElection").onclick=()=>{allocateSeats();state.factions.forEach(f=>f.prestige+=Math.floor(f.seats/8));log("全國選舉",`${leader(state).name}成為議會最大派系，共 ${leader(state).seats} 席`);nextPhase();};
+      const snapshot=state.lastElection?.round===state.round?state.lastElection:electionSnapshot();
+      const winnerId=state.lastElection?.round===state.round?state.lastElection.winnerId:null;
+      const topIds=winnerId===null?snapshot.topIds:[winnerId];
+      const partyCards=state.factions.map(f=>`<div class="choice election-party ${topIds.includes(f.id)?'leading':''}" style="--faction:${f.color}"><strong>${f.name}</strong><div class="vote-share">${snapshot.votes[f.id].toFixed(0)} 票</div><small>有效票 ${snapshot.shares[f.id].toFixed(1)}%｜全體選民 ${snapshot.electorateShares[f.id].toFixed(1)}%${winnerId===f.id?`｜${snapshot.seats[f.id]} 席｜當選國家首長`:winnerId!==null?`｜${snapshot.seats[f.id]} 席`:''}</small></div>`).join("");
+      const groupRows=GROUPS.map((group,gi)=>{const values=state.factions.map(f=>f.support[gi]),max=Math.max(...values),leaders=state.factions.filter(f=>f.support[gi]===max).map(f=>f.short).join("／");return`<tr><td><strong>${group}</strong></td>${state.factions.map(f=>`<td style="color:${f.color}">${f.support[gi]}</td>`).join("")}<td class="undecided">${groupUndecided(gi)}</td><td>${leaders}${values.filter(v=>v===max).length>1?'並列':'領先'}</td></tr>`;}).join("");
+      if(winnerId!==null){
+        main.innerHTML=`<section class="panel"><div class="eyebrow">第 ${state.round} 回合全國選舉結果</div><h2>${factionName(winnerId)}以最高票直接當選國家首長</h2><p class="lede">不設 50% 門檻。未定支持視為棄權；20 席依有效票比例分配。</p><div class="election-summary">${partyCards}</div><div class="notice">投票率 ${snapshot.turnout.toFixed(1)}%；${snapshot.tieBreak?`最高票同票，以${snapshot.tieBreak}決勝。`:'最高有效票直接當選。'}</div><div class="actions"><button class="btn primary" id="finishElection">進入回合檢查</button></div></section>`;
+        $("#finishElection").onclick=nextPhase;return;
+      }
+      main.innerHTML=`<section class="panel"><h2>全國選舉</h2><p class="lede">六個群體各有 10 票；每格支持就是一票，把六列同色數字相加即可得到全國票數。未定格視為棄權，有效票最高者直接當選國家首長，不需超過 50%。</p><div class="election-summary">${partyCards}</div><div class="notice">目前預估投票率 ${snapshot.turnout.toFixed(1)}%。${snapshot.topIds.length>1?`${snapshot.topIds.map(factionName).join("、")}並列最高；若開票仍同票，先比較聲望，再公開抽選。`:`目前由 ${factionName(snapshot.topIds[0])} 領先。`}</div><table class="election-groups"><thead><tr><th>群體（各 10 票）</th>${state.factions.map(f=>`<th style="color:${f.color}">${f.short}</th>`).join("")}<th>未定</th><th>群體領先</th></tr></thead><tbody>${groupRows}</tbody></table><div class="actions"><button class="btn gold" id="runElection">開票並分配 ${TOTAL_SEATS} 席</button></div></section>`;
+      $("#runElection").onclick=()=>{const finalSnapshot=electionSnapshot(),topPrestige=Math.max(...finalSnapshot.topIds.map(id=>state.factions[id].prestige)),prestigeFinalists=finalSnapshot.topIds.filter(id=>state.factions[id].prestige===topPrestige),winner=chooseElectionWinner(finalSnapshot),seats=allocateSeats(finalSnapshot),tieBreak=finalSnapshot.topIds.length>1?(prestigeFinalists.length===1?"聲望":"公開抽選"):null;state.headId=winner;state.factions[winner].prestige++;state.lastElection={...finalSnapshot,round:state.round,winnerId:winner,seats,tieBreak};log("全國選舉",`${factionName(winner)}以 ${finalSnapshot.shares[winner].toFixed(1)}% 有效票當選國家首長；議會 ${seats[winner]} 席`);render();};
     }
 
-    /* v0.8 integrated event-demand, national-challenge, elected-chair and ready-bill flow. These declarations are
+    /* v0.9 integrated event-demand, national-challenge, elected-chair and ready-bill flow. These declarations are
        intentionally inside the main game closure and are the only reachable
        implementations used by renderMain. */
     function htmlEscape(value){return String(value??"").replace(/[&<>\"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
@@ -394,6 +479,53 @@
     function effectText(e){
       const labels={treasury:"國庫",debt:"債務",crises:"危機",funds:"各網絡資金"};
       return Object.entries(e||{}).filter(([,v])=>v).map(([k,v])=>`${labels[k]||k}${v>0?"＋":""}${v}`).join("、")||"無";
+    }
+    function billNationalText(card){
+      const effect=card.effect||{},parts=[];
+      if(card.cost)parts.push(`國庫－${card.cost}`);
+      const other=effectText(Object.fromEntries(Object.entries(effect).filter(([k])=>!["support","prestige"].includes(k))));
+      if(other!=="無")parts.push(other);
+      return parts.join("、")||"國家指標不變";
+    }
+    function billSupportText(card){
+      return (card.effect?.support||[]).map(x=>`${groupName(x.group)}${x.value>0?"＋":""}${x.value}`).join("、")||"群體支持不變";
+    }
+    function relevantDemands(card){
+      ensureDemandState();
+      return state.demands.filter(d=>!d.resolved&&!d.fulfilled&&d.policyIds.includes(card.id));
+    }
+    function relevantChallenges(card){
+      ensureChallengeState();
+      return state.challenges.filter(c=>!c.resolved&&challengeSpec(c.challengeId)?.types.includes(card.type));
+    }
+    function billRiskText(card){
+      const demands=relevantDemands(card),challenges=relevantChallenges(card),parts=[];
+      demands.forEach(d=>parts.push(`需求「${d.title}」維持 ${d.progress||0}/${d.requiredBenefits}${d.deadlineRound<=state.round?`，本輪未達標將${effectText(d.penalty)}`:`，期限 R${d.deadlineRound}`}`));
+      challenges.forEach(c=>parts.push(`「${challengeSpec(c.challengeId).name}」少 1 點應變，現為 ${c.progress||0}/${challengeThreshold(c)}`));
+      return parts.join("；")||"不影響目前公開需求或國家挑戰，但提案者無法取得牌面政治成果。";
+    }
+    function billRelevanceHtml(card){
+      const demands=relevantDemands(card),challenges=relevantChallenges(card),tags=[];
+      demands.forEach(d=>tags.push(`<span class="relevance-tag">回應需求：${htmlEscape(d.title)} ${d.progress||0}/${d.requiredBenefits}</span>`));
+      challenges.forEach(c=>tags.push(`<span class="relevance-tag challenge">國家應變：${htmlEscape(challengeSpec(c.challengeId).name)}＋1</span>`));
+      return `<div class="relevance-line">${tags.length?tags.join(""):'<span class="relevance-tag none">目前沒有直接對應的公開危機</span>'}</div>`;
+    }
+    function proposerStakeText(card,proposerId){
+      const name=proposerId===undefined?"提案者":factionName(proposerId),prestige=card.effect?.prestige||0;
+      return `${name}：聲望＋${prestige}；${billSupportText(card)}`;
+    }
+    function readyBillCard(card,{proposerId,compact=false,showRisk=true}={}){
+      const afterTreasury=clamp(state.treasury-card.cost+(card.effect?.treasury||0),0,20);
+      return `<article class="ready-bill-card ${compact?"compact":""}"><div class="ready-bill-top"><span class="ready-tag">${card.type}</span><span class="ready-cost">國庫成本 ${card.cost}</span></div><h3>${card.name}</h3>${billRelevanceHtml(card)}<div class="bill-stakes"><div class="stake-box"><b>國家現在</b><small>${billNationalText(card)}；若立即通過，國庫 ${state.treasury} → ${afterTreasury}</small></div><div class="stake-box"><b>政治受益</b><small>${proposerStakeText(card,proposerId)}</small></div>${showRisk?`<div class="stake-box risk"><b>若未通過</b><small>${billRiskText(card)}</small></div>`:""}</div></article>`;
+    }
+    function agendaFinanceAt(index){
+      let treasury=state.treasury;
+      for(let i=0;i<index;i++){
+        const prior=readyLaw(state.proposals[i].policyId);
+        if(treasury>=prior.cost)treasury=clamp(treasury-prior.cost+(prior.effect?.treasury||0),0,20);
+      }
+      const card=readyLaw(state.proposals[index].policyId),valid=treasury>=card.cost;
+      return{before:treasury,after:valid?clamp(treasury-card.cost+(card.effect?.treasury||0),0,20):treasury,valid};
     }
     function changeTrack(name,delta){
       if(!delta)return;
@@ -540,30 +672,31 @@
       ensureReadyLegislation();
       if(state.readyLaw.chairId===null){renderChairElection();return;}
       const used=new Set(state.proposals.map(p=>p.policyId));
-      main.innerHTML=`<section class="panel"><div class="eyebrow">立法階段二</div><h2>所有政治網絡先完成提案</h2><p>每個網絡選擇一張內容固定的法案，或放棄。此時不表決，也不產生任何效果。</p><div class="chair-banner">本輪院長：<strong>${factionName(state.readyLaw.chairId)}</strong>　｜　${state.readyLaw.chairElectionSummary}　｜　目前國庫：<strong>${state.treasury}</strong></div></section><section class="ready-submit-grid">${state.factions.map(f=>{const done=state.readyLaw.responses[f.id]!==undefined,proposal=state.proposals.find(p=>p.proposerId===f.id),card=proposal&&readyLaw(proposal.policyId);if(done)return `<div class="panel submit-seat done"><h3>${f.name}</h3><p>${card?`已提出：<strong>${card.name}</strong>`:"本輪放棄提案"}</p></div>`;const options=READY_BILLS.filter(x=>!used.has(x.id)).map(x=>`<option value="${x.id}">${x.name}｜${x.type}｜成本 ${x.cost}</option>`).join("");return `<div class="panel submit-seat"><h3>${f.name}</h3><select data-law-select="${f.id}"><option value="">選擇現成法案……</option>${options}</select><div class="submit-actions"><button data-submit-law="${f.id}" class="btn primary">登記提案</button><button data-pass-law="${f.id}" class="btn">本輪放棄</button></div></div>`;}).join("")}</section>${allPlayersResponded()?`<section class="panel ready-next"><h3>所有玩家均已完成提案</h3><p>待審議區共有 ${state.proposals.length} 案。</p><button id="toReadyOrdering" class="btn primary">進入院長排案</button></section>`:""}`;
+      const available=READY_BILLS.filter(x=>!used.has(x.id));
+      main.innerHTML=`<section class="panel"><div class="eyebrow">立法階段二</div><h2>先讀懂利害，再登記提案</h2><p>法案內容固定，不能改寫。選擇時先確認國家效果、提案者的政治收益，以及它能否回應目前需求與挑戰。</p><div class="chair-banner">本輪院長：<strong>${factionName(state.readyLaw.chairId)}</strong>　｜　${state.readyLaw.chairElectionSummary}　｜　目前國庫：<strong>${state.treasury}</strong></div><details class="law-catalog"><summary>比較全部仍可提出的法案（${available.length}）</summary><div class="law-catalog-grid">${available.map(card=>readyBillCard(card,{compact:true,showRisk:false})).join("")}</div></details></section><section class="ready-submit-grid">${state.factions.map(f=>{const done=state.readyLaw.responses[f.id]!==undefined,proposal=state.proposals.find(p=>p.proposerId===f.id),card=proposal&&readyLaw(proposal.policyId);if(done)return `<div class="panel submit-seat done"><h3>${f.name}</h3><p>${card?`已提出：<strong>${card.name}</strong>`:"本輪放棄提案"}</p>${card?readyBillCard(card,{proposerId:f.id,compact:true}):""}</div>`;const options=available.map(x=>`<option value="${x.id}">${x.name}｜${x.type}｜成本 ${x.cost}</option>`).join("");return `<div class="panel submit-seat"><h3>${f.name}</h3><p class="lede">這張法案若通過，牌面政治收益歸提案者；其他網絡必須透過協商決定是否支持。</p><select data-law-select="${f.id}"><option value="">選擇現成法案……</option>${options}</select><div class="law-preview" data-law-preview="${f.id}"></div><div class="submit-actions"><button data-submit-law="${f.id}" class="btn primary">登記提案</button><button data-pass-law="${f.id}" class="btn">本輪放棄</button></div></div>`;}).join("")}</section>${allPlayersResponded()?`<section class="panel ready-next"><h3>所有玩家均已完成提案</h3><p>待審議區共有 ${state.proposals.length} 案。</p><button id="toReadyOrdering" class="btn primary">進入院長排案</button></section>`:""}`;
+      main.querySelectorAll("[data-law-select]").forEach(select=>select.onchange=()=>{const preview=main.querySelector(`[data-law-preview="${select.dataset.lawSelect}"]`);preview.innerHTML=select.value?readyBillCard(readyLaw(select.value),{proposerId:+select.dataset.lawSelect,compact:true}):"";});
       main.querySelectorAll("[data-submit-law]").forEach(btn=>btn.onclick=()=>{const id=+btn.dataset.submitLaw,select=main.querySelector(`[data-law-select="${id}"]`);if(!select.value){alert("請先選擇一張法案牌。");return;}state.proposals.push({proposerId:id,policyId:select.value});state.readyLaw.responses[id]="proposed";log("登記提案",`${factionName(id)}提出「${readyLaw(select.value).name}」`);render();});
       main.querySelectorAll("[data-pass-law]").forEach(btn=>btn.onclick=()=>{const id=+btn.dataset.passLaw;state.readyLaw.responses[id]="passed";log("放棄提案",`${factionName(id)}本輪放棄提案`);render();});
       if($("#toReadyOrdering"))$("#toReadyOrdering").onclick=()=>{state.phase=3;render();};
     }
     function renderReadyOrdering(){
       ensureReadyLegislation();
-      main.innerHTML=`<section class="panel"><div class="eyebrow">立法階段二</div><h2>院長排定表決順序</h2><p><strong>${factionName(state.readyLaw.chairId)}</strong>必須安排全部合法提案，只能調整順序，不能刪案。</p><div class="chair-banner">目前國庫：<strong>${state.treasury}</strong>。先通過能增加國庫的法案，可以替後面的支出案提供財源。</div></section><section class="agenda-order">${state.proposals.length?state.proposals.map((p,i)=>{const card=readyLaw(p.policyId);return `<div class="panel agenda-order-row"><div class="agenda-number">${i+1}</div><div><strong>${card.name}</strong><small>${factionName(p.proposerId)} 提案｜${card.type}｜國庫成本 ${card.cost}</small></div><div class="order-buttons"><button data-up="${i}" ${i===0?"disabled":""}>↑</button><button data-down="${i}" ${i===state.proposals.length-1?"disabled":""}>↓</button></div></div>`;}).join(""):'<div class="panel"><p>本輪沒有法案。</p></div>'}</section><section class="panel ready-next"><button id="lockReadyAgenda" class="btn primary">確認議程並開始逐案表決</button></section>`;
+      main.innerHTML=`<section class="panel"><div class="eyebrow">立法階段二</div><h2>院長排定表決順序</h2><p><strong>${factionName(state.readyLaw.chairId)}</strong>必須安排全部合法提案，只能調整順序，不能刪案。每次移動都會重新推演「前案全數通過」時的國庫。</p><div class="chair-banner">目前國庫：<strong>${state.treasury}</strong>。綠字代表財政可行；紅字表示依目前順序輪到該案時可能直接失效。</div></section><section class="agenda-order">${state.proposals.length?state.proposals.map((p,i)=>{const card=readyLaw(p.policyId),finance=agendaFinanceAt(i),demands=relevantDemands(card),challenges=relevantChallenges(card);return `<div class="panel agenda-order-row"><div class="agenda-number">${i+1}</div><div><strong>${card.name}</strong><small>${factionName(p.proposerId)} 提案｜${card.type}｜${demands.length?`回應 ${demands.map(d=>d.title).join("、")}`:"無直接需求"}${challenges.length?`｜應變 ${challenges.map(c=>challengeSpec(c.challengeId).name).join("、")}`:""}</small><div class="agenda-finance ${finance.valid?"":"bad"}">${finance.valid?`財政推演：國庫 ${finance.before} → ${finance.after}`:`財政推演：輪到本案預估僅 ${finance.before}，低於成本 ${card.cost}`}</div></div><div class="order-buttons"><button data-up="${i}" ${i===0?"disabled":""}>↑</button><button data-down="${i}" ${i===state.proposals.length-1?"disabled":""}>↓</button></div></div>`;}).join(""):'<div class="panel"><p>本輪沒有法案。</p></div>'}</section><section class="panel ready-next"><button id="lockReadyAgenda" class="btn primary">確認議程並開始逐案表決</button></section>`;
       main.querySelectorAll("[data-up]").forEach(b=>b.onclick=()=>{const i=+b.dataset.up;[state.proposals[i-1],state.proposals[i]]=[state.proposals[i],state.proposals[i-1]];render();});
       main.querySelectorAll("[data-down]").forEach(b=>b.onclick=()=>{const i=+b.dataset.down;[state.proposals[i+1],state.proposals[i]]=[state.proposals[i],state.proposals[i+1]];render();});
       $("#lockReadyAgenda").onclick=()=>{if(!state.proposals.length){state.phase=6;}else{state.readyLaw.current=0;state.phase=4;log("院長排案",state.proposals.map(p=>readyLaw(p.policyId).name).join(" → "));}render();};
-    }
-    function readyBillCard(card){
-      const effect=card.effect||{},groups=(effect.support||[]).map(x=>`${groupName(x.group)}${x.value>0?"＋":""}${x.value}`).join("、")||"無";
-      const national=effectText(Object.fromEntries(Object.entries(effect).filter(([k])=>!["support","prestige"].includes(k))));
-      return `<article class="ready-bill-card"><h3>${card.name}</h3><div class="ready-effects"><strong>花費：</strong>國庫 ${card.cost}</div><div class="ready-effects"><strong>類型：</strong>${card.type}</div><div class="ready-effects"><strong>效果：</strong>國家 ${national}；群體 ${groups}；提案者聲望＋${effect.prestige||0}</div></article>`;
     }
     function renderReadyVote(){
       const proposal=state.proposals[state.readyLaw.current];
       if(!proposal){state.phase=6;render();return;}
       const card=readyLaw(proposal.policyId),valid=state.treasury>=card.cost;
-      main.innerHTML=`<section class="panel"><div class="eyebrow">立法階段三｜第 ${state.readyLaw.current+1}/${state.proposals.length} 案</div><h2>逐案表決</h2><p>法案目前仍未生效；只有通過後才依牌面執行。</p><div class="chair-banner">提案者：<strong>${factionName(proposal.proposerId)}</strong>　｜　目前國庫：<strong>${state.treasury}</strong>　｜　通過門檻：<strong>${majority()} 席</strong></div></section>${readyBillCard(card)}${!valid?`<section class="panel fiscal-failure"><h3>財政不成立</h3><p>本案需要國庫 ${card.cost}，但目前只有 ${state.treasury}。不進入表決，也不產生效果。</p><button id="recordFiscalFailure" class="btn primary">記錄失敗</button></section>`:`<section class="panel"><h3>各政治網絡表決</h3>${voteControls(Array(4).fill("abstain"))}<button id="resolveReadyVote" class="btn primary" style="margin-top:14px">開票</button></section>`}`;
+      main.innerHTML=`<section class="panel"><div class="eyebrow">立法階段三｜第 ${state.readyLaw.current+1}/${state.proposals.length} 案</div><h2>先確認利害，再公開表態</h2><p>法案目前仍未生效。提案者取得牌面政治收益，其他網絡應先談妥交換，再決定是否把席次交給這項法案。</p><div class="chair-banner">提案者：<strong>${factionName(proposal.proposerId)}</strong>　｜　目前國庫：<strong>${state.treasury}</strong>　｜　通過門檻：<strong>${majority()} 席</strong></div></section>${readyBillCard(card,{proposerId:proposal.proposerId})}${!valid?`<section class="panel fiscal-failure"><h3>財政不成立</h3><p>本案需要國庫 ${card.cost}，但目前只有 ${state.treasury}。不進入表決，也不產生效果。</p><div class="notice warn"><strong>失敗代價：</strong>${billRiskText(card)}</div><button id="recordFiscalFailure" class="btn primary" style="margin-top:14px">記錄失敗</button></section>`:`<section class="panel"><h3>各政治網絡公開表態</h3><p class="lede">「尚未表態」不是棄權。四方都選擇贊成、反對或棄權後才能開票。</p><div id="voteOutlook"></div>${voteControls(Array(4).fill("pending"),card,proposal)}<button id="resolveReadyVote" class="btn primary" style="margin-top:14px">確認並開票</button></section>`}`;
       if($("#recordFiscalFailure"))$("#recordFiscalFailure").onclick=()=>resolveReadyLaw(false,card,proposal,{yes:0,no:0,abstain:0},"財政不成立");
-      if($("#resolveReadyVote"))$("#resolveReadyVote").onclick=()=>{const choices=[...main.querySelectorAll("[data-vote]")],tally={yes:0,no:0,abstain:0};choices.forEach(sel=>tally[sel.value]+=state.factions[+sel.dataset.vote].seats);resolveReadyLaw(tally.yes>=majority(),card,proposal,tally,tally.yes>=majority()?"表決通過":"表決否決");};
+      if($("#resolveReadyVote")){
+        updateVoteOutlook();
+        main.querySelectorAll("[data-vote]").forEach(select=>select.onchange=updateVoteOutlook);
+        $("#resolveReadyVote").onclick=()=>{const choices=[...main.querySelectorAll("[data-vote]")];if(choices.some(sel=>sel.value==="pending")){alert("所有政治網絡都必須先公開表態；若不支持也不反對，請選擇棄權。");return;}const tally={yes:0,no:0,abstain:0};choices.forEach(sel=>tally[sel.value]+=state.factions[+sel.dataset.vote].seats);resolveReadyLaw(tally.yes>=majority(),card,proposal,tally,tally.yes>=majority()?"表決通過":"表決否決");};
+      }
     }
     function progressReadyDemands(card,proposerId){
       ensureDemandState();const changed=[];
@@ -574,7 +707,7 @@
       state.treasury-=card.cost;
       const effect=card.effect||{};
       Object.entries(effect).filter(([k])=>!["support","prestige"].includes(k)).forEach(([k,v])=>changeTrack(k,v));
-      (effect.support||[]).forEach(x=>{if(x.value>0)state.roundBenefits[x.group]+=x.value;else state.roundBurdens[x.group]+=Math.abs(x.value);state.factions[proposerId].support[x.group]+=x.value;});
+      (effect.support||[]).forEach(x=>{const actual=applySupportChange(proposerId,x.group,x.value);if(actual>0)state.roundBenefits[x.group]+=actual;else state.roundBurdens[x.group]+=Math.abs(actual);});
       state.factions[proposerId].prestige+=effect.prestige||0;
       return{demands:progressReadyDemands(card,proposerId),challenges:progressReadyChallenges(card,proposerId)};
     }
@@ -587,7 +720,7 @@
     }
     function renderReadyResult(){
       const r=state.readyLaw.lastResult,card=readyLaw(r.lawId);
-      main.innerHTML=`<section class="panel law-result ${r.passed?"passed":"failed"}"><div class="eyebrow">立法階段四</div><h2>${r.passed?"法案通過並生效":"法案未生效"}</h2><h3>${r.lawName}</h3><p>${r.reason}${r.reason.startsWith("表決")?`：贊成 ${r.tally.yes}、反對 ${r.tally.no}、棄權 ${r.tally.abstain}。`:""}</p>${r.passed?`<p><strong>已執行：</strong>支付國庫 ${card.cost}；依「${card.type}」類型執行牌面效果。</p>${r.demands.length?`<p><strong>回應社會需求：</strong>${r.demands.join("、")}</p>`:""}${r.challengeUpdates?.length?`<div class="challenge-response"><strong>國家應變：</strong>${r.challengeUpdates.join("、")}${r.challengeResolved?.length?`<br><strong>解除挑戰：</strong>${r.challengeResolved.join("、")}`:""}</div>`:""}`:'<p>花費、效果與國家應變全部不執行。</p>'}<button id="continueReadyAgenda" class="btn primary">${state.readyLaw.current+1<state.proposals.length?"處理下一案":"完成本輪立法"}</button></section>`;
+      main.innerHTML=`<section class="panel law-result ${r.passed?"passed":"failed"}"><div class="eyebrow">立法階段四</div><h2>${r.passed?"法案通過並生效":"法案未生效"}</h2><h3>${r.lawName}</h3><p>${r.reason}${r.reason.startsWith("表決")?`：贊成 ${r.tally.yes}、反對 ${r.tally.no}、棄權 ${r.tally.abstain}。`:""}</p>${r.passed?`<div class="bill-stakes"><div class="stake-box"><b>國家已執行</b><small>${billNationalText(card)}</small></div><div class="stake-box"><b>提案者已取得</b><small>${proposerStakeText(card,r.proposerId)}</small></div><div class="stake-box"><b>公共回應</b><small>${r.demands.length?`需求：${r.demands.join("、")}`:"沒有直接推進社會需求"}${r.challengeUpdates?.length?`；應變：${r.challengeUpdates.join("、")}`:""}</small></div></div>${r.challengeResolved?.length?`<div class="challenge-response"><strong>解除挑戰：</strong>${r.challengeResolved.join("、")}</div>`:""}`:`<div class="notice warn"><strong>未實現：</strong>${billRiskText(card)}</div>`}<button id="continueReadyAgenda" class="btn primary" style="margin-top:14px">${state.readyLaw.current+1<state.proposals.length?"處理下一案":"完成本輪立法"}</button></section>`;
       $("#continueReadyAgenda").onclick=()=>{state.readyLaw.current++;if(state.readyLaw.current>=state.proposals.length){state.phase=6;log("立法完成","全部合法提案均已處理");}else state.phase=4;state.readyLaw.lastResult=null;render();};
     }
     function resolveDueDemands(){
@@ -612,7 +745,19 @@
     function scoreFactions(){return state.factions.map(f=>({...f,score:f.seats+f.prestige+Math.floor(f.funds/3)})).sort((a,b)=>b.score-a.score||b.seats-a.seats);}
     function scoreTable(){const scores=scoreFactions();return `<table class="group-table" style="margin:16px 0"><thead><tr><th>網絡</th><th>席次</th><th>聲望</th><th>資金加分</th><th>總分</th></tr></thead><tbody>${scores.map(f=>`<tr><td>${f.name}</td><td>${f.seats}</td><td>${f.prestige}</td><td>${Math.floor(f.funds/3)}</td><td><b>${f.score}</b></td></tr>`).join("")}</tbody></table>`;}
     function factionOptions(selected){return state.factions.map(f=>`<option value="${f.id}" ${f.id===selected?'selected':''}>${f.name}</option>`).join("");}
-    function voteControls(votes){return `<div class="vote-grid">${state.factions.map((f,i)=>`<label class="vote-row"><strong>${f.name}</strong><span class="seat">${f.seats} 席</span><select data-vote="${i}"><option value="abstain" ${votes[i]==='abstain'?'selected':''}>棄權</option><option value="yes" ${votes[i]==='yes'?'selected':''}>贊成</option><option value="no" ${votes[i]==='no'?'selected':''}>反對</option></select></label>`).join("")}</div>`;}
+    function voteInterestText(factionId,card,proposal){
+      if(factionId===proposal.proposerId)return `直接受益：${proposerStakeText(card,factionId)}`;
+      return "沒有直接牌面收益；可用本案支持交換後續法案、議程順位或其他公開承諾。";
+    }
+    function voteControls(votes,card,proposal){return `<div class="vote-grid">${state.factions.map((f,i)=>`<label class="vote-row"><div><strong>${f.name}</strong><div class="vote-interest">${voteInterestText(f.id,card,proposal)}</div></div><span class="seat">${f.seats} 席</span><select data-vote="${i}"><option value="pending" ${votes[i]==='pending'?'selected':''}>尚未表態</option><option value="yes" ${votes[i]==='yes'?'selected':''}>贊成</option><option value="no" ${votes[i]==='no'?'selected':''}>反對</option><option value="abstain" ${votes[i]==='abstain'?'selected':''}>棄權</option></select></label>`).join("")}</div>`;}
+    function updateVoteOutlook(){
+      const box=$("#voteOutlook");if(!box)return;
+      const tally={yes:0,no:0,abstain:0,pending:0},total=state.factions.reduce((n,f)=>n+f.seats,0);
+      main.querySelectorAll("[data-vote]").forEach(sel=>tally[sel.value]+=state.factions[+sel.dataset.vote].seats);
+      const need=Math.max(0,majority()-tally.yes),possible=tally.yes+tally.pending>=majority();
+      const status=tally.yes>=majority()?"已達通過門檻":possible?`還差 ${need} 席才能通過`:`即使未表態席次全部贊成，也無法通過`;
+      box.innerHTML=`<div class="vote-outlook"><div class="vote-outlook-head"><span>公開票勢</span><span>門檻 ${majority()} 席</span></div><div class="vote-track"><span class="yes" style="width:${tally.yes/total*100}%"></span><span class="no" style="width:${tally.no/total*100}%"></span><span class="abstain" style="width:${tally.abstain/total*100}%"></span></div><div class="vote-status">${status}</div><small>贊成 ${tally.yes}｜反對 ${tally.no}｜棄權 ${tally.abstain}｜尚未表態 ${tally.pending}</small></div>`;
+    }
     function bindVotes(votes){document.querySelectorAll("[data-vote]").forEach(el=>el.onchange=e=>{votes[+e.target.dataset.vote]=e.target.value;render();});}
     function countVotes(votes){let yes=0,no=0,abstain=0;votes.forEach((v,i)=>{if(v==='yes')yes+=state.factions[i].seats;else if(v==='no')no+=state.factions[i].seats;else abstain+=state.factions[i].seats;});return{yes,no,abstain};}
 
@@ -620,7 +765,7 @@
     $("#saveBtn").onclick=save; $("#loadBtn").onclick=load;
     $("#restartBtn").onclick=()=>{if(confirm("確定要清除目前進度並重新開始嗎？")){localStorage.removeItem("islandRepublicState");newGame();}};
     newGame();
-    window.__IR_TEST__={getState:()=>JSON.parse(JSON.stringify(state)),setState:s=>{state=s;render();},laws:READY_BILLS,challenges:CHALLENGES,phases:PHASES};
+    window.__IR_TEST__={getState:()=>JSON.parse(JSON.stringify(state)),setState:s=>{state=s;render();},laws:READY_BILLS,events:EVENTS,challenges:CHALLENGES,phases:PHASES,groups:[...GROUPS],groupConcerns:[...GROUP_CONCERNS],groupElectorate:[...GROUP_ELECTORATE],electionSnapshot:()=>JSON.parse(JSON.stringify(electionSnapshot()))};
   })();
   </script>
 </body>
