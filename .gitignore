@@ -1,0 +1,7 @@
+# Generated test and document preview files
+work/tmp/
+
+# Local editor and OS metadata
+.DS_Store
+Thumbs.db
+*.log
